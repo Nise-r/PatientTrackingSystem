@@ -132,6 +132,14 @@ body, html {
   right: 0; /* Sidebar is open */
   overflow-y: auto;
 }
+.sidebarR.open div:nth-of-type(1){
+  
+}
+.givePrescription{
+  margin-bottom: 100px;
+  position: relative;
+  bottom: 100;
+}
 .sidebarComm {
   color: black;
   font-size: 20px;
@@ -186,6 +194,7 @@ body, html {
   padding: 10px;
   text-align: center;
 }
+
 
 /*.sidebar-tabs li a:hover {
   text-decoration: underline;

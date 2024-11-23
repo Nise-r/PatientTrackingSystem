@@ -5,7 +5,7 @@ const Patient = require('../models/patients')
 
 
 userRouter.get('/',async (request,response)=>{
-	const users = await User.find({}).populate('patients',{name:1,data:1})
+	const users = await User.find({}).populate('patients',{name:1,phone:1})
 	response.json(users)
 })
 

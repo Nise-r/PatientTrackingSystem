@@ -24,7 +24,9 @@ loginRouter.post('/',async (request,response)=>{
 		{expiresIn:60*60}
 	)
 
-	response.status(200).send({token:token,username:user.username,name:user.name,phone:user.phone,type:user.type})
+	response.status(200).send({token:token,username:user.username,name:user.name,phone:user.phone,type:user.type,email:user.email,address:user.address,routine:user.routine})
 })
+
+
 
 module.exports = loginRouter

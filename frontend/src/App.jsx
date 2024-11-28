@@ -11,6 +11,9 @@ import {
 // import {Login} from './pages/login'
 import patientService from './services/patient'
 import loginService from './services/login'
+import llmService from './services/llm'
+import Notification from './components/Notification'
+import axios from 'axios'
 
 
 
@@ -323,13 +326,9 @@ const patientsData = {
     temperature: 36.8,
     pain: 0,
   }
+  }
 }
 
-  },
-  2:{
-    name:'manvendra',
-    phone:'08120332038',
-  },
 }
 
 
@@ -368,46 +367,120 @@ const createChartData = (label,indexes, data) => ({
     ],
 })
 
-const Profile=({isSideOpenL,toggleSidebarL,user})=>{
+const Profile=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
+  const [name, setName] = useState('')
+  const [phone,setPhone] = useState(0)
+  const [email,setEmail] = useState('')
+  const [address,setAddress] = useState('')
+  const [routine, setRoutine] = useState('')
+  const navigate = useNavigate()
+
   useEffect(() => {
-  if (user) {
-      // Save the current path in localStorage
-      localStorage.setItem("lastVisitedPage", "/profile");
-    }
+    if (user) {
+        // Save the current path in localStorage
+        localStorage.setItem("lastVisitedPage", "/profile");
+      }
+    
+  // if(user.address!=null)
+  //   setAddress(user.address)
   }, [user]);
+
   useEffect(()=>{
-    if(isSideOpenL)
-    toggleSidebarL()
+    if(isSideOpenL) toggleSidebarL()
+    setName(user.name)
+    setPhone(user.phone)
+    setEmail(user.email)
+    setRoutine(user.routine)
   },[])
+
+  const handler = (event,handler)=>{
+    // console.log(event.target.value)
+    handler(event.target.value)
+  }
+  const submitHandler = async (event)=>{
+    event.preventDefault()
+    try {
+      const createdUser = await patientService.edit({ name, phone ,email,address,routine})
+      // window.localStorage.setItem('loggedUser', JSON.stringify(loadedUser))
+      setName('')
+      setPhone(null)
+      setEmail('')
+      setAddress('')
+      setRoutine('')
+
+      user.name=name
+      user.email=email
+      user.phone=phone
+
+      navigate('/login')
+
+      setMessage('Succesfully edited the details')
+      setTimeout(()=>{
+        setMessage(null)
+      },3000)
+
+    
+      
+    } catch (exception) {
+      console.error('updating user failed: ', exception)
+
+    }
+  }
+
+
+  // console.log(user)
   return (
     <div> 
-    <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
-        <button onClick={toggleSidebarL} className="close-btn">✖</button>
-        <ul className="sidebar-tabs">
-          <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
-  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-  <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-</svg></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-          {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
-          {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
-          {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
-          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
-          {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
-        </ul>
-      </div>
+    <div className="nav">
+      <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
+          <button onClick={toggleSidebarL} className="close-btn">✖</button>
+          <ul className="sidebar-tabs">
+            <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
+    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+    <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+  </svg></li>
+            <li><Link to="/profile">Profile</Link></li>
+            <li><Link to="/settings">Settings</Link></li>
+            {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
+            {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
+            {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+            {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+            <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+            {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
+          </ul>
+        </div>
+      
       <div className='navbar'>
+        <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
   <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
 </svg></p>
+        </div>
         <p  className='patient'> {user.name}</p>
       </div>
-    This is profile.
+    </div>
+    <Notification message={message}/>
+    <div className="container">
+      <div className="profile">
+        <h2>Profile</h2>
+        <form onSubmit={submitHandler}>
+          <p>Name: <input onChange={(e)=>handler(e,setName)} value={name} type='string'/></p>
+          <p>Phone: <input onChange={(e)=>handler(e,setPhone)} value={phone} type='number'/></p>
+          <p>Email: <input onChange={(e)=>handler(e,setEmail)} value={email} type='string'/></p>
+          <p>Address: <input onChange={(e)=>handler(e,setAddress)} value={address} type='string'/></p>
+          {user.type=='patient'?<p>Routine: <textarea type='string' rows="5" cols="30" onChange={(e)=>handler(e,setRoutine)} value={routine}/></p>:null }
+          <button type='submit'>Edit</button>
+        </form>
+      </div>
+    </div>
+    {/*<p>Name: {user.name}</p>
+    <p>Phone: {user.phone}</p>
+    <p>Email: {user.email}</p>
+    <p>Address: {user.address==null?user.address:null}</p>*/}
     </div>
   )
 }
-const Settings=({isSideOpenL,toggleSidebarL,user})=>{
+const Settings=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
   useEffect(() => {
   if (user) {
     // Save the current path in localStorage
@@ -422,10 +495,11 @@ const Settings=({isSideOpenL,toggleSidebarL,user})=>{
 
   return (
     <div> 
+    <div className="nav">
     <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
         <button onClick={toggleSidebarL} className="close-btn">✖</button>
         <ul className="sidebar-tabs">
-          <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
+          <li><svg  xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
   <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
   <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
 </svg></li>
@@ -434,21 +508,35 @@ const Settings=({isSideOpenL,toggleSidebarL,user})=>{
           {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
+      {/*<Notification message={message}/>*/}
+      
       <div className='navbar'>
+      <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
   <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
 </svg></p>
+      </div>
         <p  className='patient'>{user.name}</p>
       </div>
-    These are settings
+    </div>
+    <Notification message={message}/>
+    <div className="container">
+      <div className="profile">
+        <p>Theme Preferences:Light Dark</p>
+        <p>Language Settings: English Hindi</p>
+        <p>Time zone: India</p>
+      </div>
+      {/*<p>These are settings</p>*/}
+    </div>
     </div>
   )
 }
-const Patients= ({isSideOpenL,toggleSidebarL,user,setUser})=>{
+const Patients= ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
   const navigate = useNavigate()
   const [patients,setPatients] = useState([])
 
@@ -474,35 +562,46 @@ const Patients= ({isSideOpenL,toggleSidebarL,user,setUser})=>{
   
   return (
     <div> 
-    <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
-        <button onClick={toggleSidebarL} className="close-btn">✖</button>
-        <ul className="sidebar-tabs">
-          <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
-  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-  <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-</svg></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-          {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
-          {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
-          {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
-          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
-          {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
-        </ul>
-      </div>
-      <div className='navbar'>
-        <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
-  <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
-</svg></p>
-        <p  className='patient'>{user.name}</p>
+    <div className="nav">
+      <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
+          <button onClick={toggleSidebarL} className="close-btn">✖</button>
+          <ul className="sidebar-tabs">
+            <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
+    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+    <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+  </svg></li>
+            <li><Link to="/profile">Profile</Link></li>
+            <li><Link to="/settings">Settings</Link></li>
+            {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
+            {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
+            {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+            {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+            <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+            {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
+          </ul>
+        </div>
+        
+        <div className='navbar'>
+          <div className="hover">
+          <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
+    <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+  </svg></p>
+          </div>
+          <p  className='patient'>{user.name}</p>
 
+        </div>
       </div>
-        {/*{Object.entries(patientsData).map(([key,value])=><p key = {key} onClick={()=>navigate('/dashboard/'+value.name)}>{value.name}  {value.phone}</p>)}*/}
-        {Object.entries(patients).map(([key,value])=><p key = {key} onClick={()=>navigate('/dashboard/'+value.name)}>{value.name}  {value.phone}</p>)}
+      <Notification message={message}/>
+      <div className="container">
+        <div className="profile">
+          {/*{Object.entries(patientsData).map(([key,value])=><p key = {key} onClick={()=>navigate('/dashboard/'+value.name)}>{value.name}  {value.phone}</p>)}*/}
+          {Object.entries(patients).map(([key,value])=><p className="hover" key = {key} onClick={()=>navigate('/dashboard/'+value.name)}>{value.name}  {value.phone}</p>)}
+        </div>
+      </div>
     </div>
   )
 }
-const CreateAccount = ()=>{
+const CreateAccount = ({message,setMessage})=>{
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
   const [password,setPassword] = useState('')
@@ -510,6 +609,40 @@ const CreateAccount = ()=>{
   const [email, setEmail] = useState('')
   const [type,setType] = useState('')
   const navigate  = useNavigate()
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [preview, setPreview] = useState('');
+  // const [message, setMessage] = useState('');
+
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setSelectedFile(file);
+  //     setPreview(URL.createObjectURL(file)); // Preview the selected file
+  //   }
+  // };
+
+  // const handleUpload = async (e) => {
+  //   e.preventDefault();
+  //   if (!selectedFile) {
+  //     setMessage('Please select a file to upload.');
+  //     return;
+  //   }
+
+  //   const formData = new FormData();
+  //   formData.append('profilePicture', selectedFile);
+
+  //   try {
+  //     const response = await axios.put(`/users/${userId}/profile-picture`, formData, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       },
+  //     });
+  //     setMessage(response.data.message);
+  //   } catch (error) {
+  //     setMessage('Error uploading profile picture.');
+  //   }
+  // };
 
   const handler = (event,handler)=>{
     // console.log(event.target.value)
@@ -529,8 +662,26 @@ const CreateAccount = ()=>{
 
       // setUser(loadedUser)
       // patientService.setToken(loadedUser.token)
-
+      // console.log(createdUser)
       // const lastVisitedPage = localStorage.getItem("lastVisitedPage") || "/patients"
+      // if (!selectedFile) {
+      //   console.log('Please select a file to upload.');
+      //   return;
+      // }
+
+      // const formData = new FormData();
+      // formData.append('profilePicture', selectedFile);
+
+      // try {
+      //   const response = await axios.put(`/users/${createdUser.id}/profile-picture`, formData, {
+      //     headers: {
+      //       'Content-Type': 'multipart/form-data',
+      //     },
+      //   });
+      //   console.log(response);
+      // } catch (error) {
+      //   console.log('Error uploading profile picture.');
+      // }
       navigate('/login')
     } catch (exception) {
       console.error('creating user failed: ', exception)
@@ -538,27 +689,40 @@ const CreateAccount = ()=>{
     }
   }
   return (
-    <div>
-      <h2>Create Account</h2>
-      <form onSubmit={submitHandler}>
-        <p>Username: <input onChange={(e)=>handler(e,setUsername)} type='string'/></p>
-        <p>Name: <input onChange={(e)=>handler(e,setName)} type='string'/></p>
-        <p>Password: <input onChange={(e)=>handler(e,setPassword)} type='string'/></p>
-        <p>Phone: <input onChange={(e)=>handler(e,setPhone)} type='number'/></p>
-        <p>Email: <input onChange={(e)=>handler(e,setEmail)} type='string'/></p>
-        <div onChange={(e)=>handler(e,setType)}>
-          <input type="radio" value="doctor" onChange={()=>{}} checked={type==="doctor"}/> Doctor
-          <input type="radio" value="patient" onChange={()=>{}} checked={type==="patient"}/> Patient
-        </div>
-        <button type='submit'>Login</button>
-      </form>
-      <Link to="/login">Have an account? login</Link>
+    <div className="container">
+      <div className="profile">
+        <h2>Create Account</h2>
+        <Notification message={message}/>
+        <form onSubmit={submitHandler}>
+          <p>Username: <input onChange={(e)=>handler(e,setUsername)} type='string'/></p>
+          <p>Name: <input onChange={(e)=>handler(e,setName)} type='string'/></p>
+          <p>Password: <input onChange={(e)=>handler(e,setPassword)} type='string'/></p>
+          <p>Phone: <input onChange={(e)=>handler(e,setPhone)} type='number'/></p>
+          <p>Email: <input onChange={(e)=>handler(e,setEmail)} type='string'/></p>
+          <div className="container" style={{margin:'10px'}} onChange={(e)=>handler(e,setType)}>
+            <input type="radio" value="doctor" onChange={()=>{}} checked={type==="doctor"}/> Doctor
+            <input type="radio" value="patient" onChange={()=>{}} checked={type==="patient"}/> Patient
+          </div>
+          {/*<div>
+            <h2>Upload Profile Picture</h2>
+            {/*<form onSubmit={handleUpload}>*/}
+              {/*<input type="file" accept="image/*" onChange={handleFileChange} />*/}
+              {/*{preview && <img src={preview} alt="Preview" style={{ width: '150px', marginTop: '10px' }} />}*/}
+              {/*<button type="submit">Upload</button>*/}
+            {/*</form>*/}
+            {/*{message && <p>{message}</p>}*/}
+          {/*</div>*/}
+          <button type='submit'>Login</button>
+        </form>
+        <Link to="/login">Have an account? login</Link>
+      </div>
     </div>
   )
 }
-const LoginPage = ({setUser})=>{
+const LoginPage = ({setUser,message,setMessage})=>{
   const [username,setUsername] = useState('')
   const [password,setPassword] = useState('')
+
   const navigate  = useNavigate()
 
   const submitHandler = async (event) => {
@@ -573,6 +737,10 @@ const LoginPage = ({setUser})=>{
 
       const lastVisitedPage = localStorage.getItem("lastVisitedPage") || "/patients"
       navigate(lastVisitedPage)
+      setMessage('Succesfully logged in')
+      setTimeout(()=>{
+        setMessage(null)
+      },5000)
     } catch (exception) {
       console.error('Login failed: ', exception)
       alert('Invalid credentials, please try again.')
@@ -586,23 +754,33 @@ const LoginPage = ({setUser})=>{
   }
 
   return (
-    <div>
-      <h2>Login</h2>
-      <form onSubmit={submitHandler}>
-        <p>Username: <input onChange={(e)=>userHandler(e)} type='string'/></p>
-        <p>Password: <input onChange={(e)=>passHandler(e)} type='string'/></p>
-        <button type='submit'>Login</button>
-      </form>
-      <Link to="/create">create account</Link>
+    <div className="container">
+      <div className="profile">
+        <h2>Login</h2>
+        <Notification message={message}/>
+        <form onSubmit={submitHandler}>
+          <p>Username: <input onChange={(e)=>userHandler(e)} type='string'/></p>
+          <p>Password: <input onChange={(e)=>passHandler(e)} type='string'/></p>
+          <button type='submit'>Login</button>
+        </form>
+        <Link to="/create">create account</Link>
+      </div>
     </div>
   )
 }
 
-const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC})=>{
+const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC,message,setMessage})=>{
   const [patient,setPatient] = useState([])
   const [comment,setComment] = useState('')
   const [timeRange, setTimeRange] = useState('thisWeek')
   const [filteredData, setFilteredData] = useState([])
+  const [LLM,setLLM] = useState('')
+  const [LLMHR,setLLMHR] = useState('')
+  const [LLMBP,setLLMBP] = useState('')
+  const [LLMGL,setLLMGL] = useState('')
+  const [LLMOL,setLLMOL] = useState('')
+  const [LLMT,setLLMT] = useState('')
+  const [LLMP,setLLMP] = useState('')
   const navigate = useNavigate()
 
 
@@ -610,8 +788,10 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
 
   const getP = async () => {
       const p = await patientService.getPatientsData(id)
+      // const resp  = await llmService.getLlmResponse('what is the capital of india')
+      // console.log(resp)
       setPatient(p)
-      console.log(p)
+      // console.log(p)
   }
   const handler = (event)=>{
     // console.log(event.target.value)
@@ -634,6 +814,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
   useEffect(() => {
     getP()
   }, [id])
+
   const filterData = (range) => {
     const now = new Date();
     const filtered = Object.entries(dataF.data).filter(([key]) => {
@@ -657,18 +838,68 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
         return entryDate.getMonth() === lastMonth.getMonth();
       }
       return false;
-    });
-    return Object.fromEntries(filtered);
-  };
+    })
 
-  const dataF = patientsData[1]
+    return Object.fromEntries(filtered);
+  }
+
+  const llmResponse = async (input)=>{
+    const jsonInput = JSON.stringify(input)
+    const escapedJson = JSON.stringify(jsonInput)
+    // console.log(escapedJson)
+    const resp  = await llmService.getLlmResponse(escapedJson)
+    setLLM(resp.choices[0].message.content)
+    // console.log(resp.choices[0].message.content)
+  }
+  const specificLlmResponse = async (input,cmd)=>{
+    const jsonInput = JSON.stringify(input)
+    const escapedJson = JSON.stringify(jsonInput)
+    // console.log(escapedJson)
+    const resp  = await llmService.getLlmResponse(escapedJson)
+    // console.log(resp.choices[0].message.content)
+    if(cmd=='hr') setLLMHR(resp.choices[0].message.content)
+    if(cmd=='gl') setLLMGL(resp.choices[0].message.content)
+    if(cmd=='p') setLLMP(resp.choices[0].message.content)
+    if(cmd=='t') setLLMT(resp.choices[0].message.content)
+    if(cmd=='ol') setLLMOL(resp.choices[0].message.content)
+    if(cmd=='bp') setLLMBP(resp.choices[0].message.content)
+    // console.log(resp.choices[0].message.content)
+  }
+
+  const dataF = patient[0]
 
   useEffect(() => {
     if (user && dataF && dataF.name) {
       localStorage.setItem("lastVisitedPage", `/dashboard/${dataF.name}`)
       setFilteredData(filterData('thisWeek'))
+      // llmResponse(filteredData)
     }
+    // llmResponse()
+
   }, [user, dataF])
+
+  useEffect(()=>{
+    llmResponse(filteredData)
+    specificLlmResponse(specificData('heartRate'),'hr')
+    specificLlmResponse(specificData('glucoseLevel'),'gl')
+    specificLlmResponse(specificData('pain'),'p')
+    specificLlmResponse(specificData('temperature'),'t')
+    specificLlmResponse(specificData('oxygenLevel'),'ol')
+    specificLlmResponse(specificData('bloodPressure'),'bp')
+    // console.log(specificData('bloodPressure'))
+  },[filteredData])
+
+  const specificData = (key)=>{
+    const label  =Object.keys(filteredData)
+    const data = Object.values(filteredData).map((value) => value[key])
+    const dictionary = {};
+    for (let i = 0; i < label.length; i++) {
+      dictionary[label[i]] = data[i];
+    }
+
+    return dictionary
+    // console.log(LLMSpecific)
+  }
 
   if (!patient || patient.length === 0) {
     return <div>Loading...</div>
@@ -684,14 +915,19 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
 
   // Update chart data when time range changes
   const handleTimeRangeChange = (event) => {
-    const selectedRange = event.target.value;
-    setTimeRange(selectedRange);
-    setFilteredData(filterData(selectedRange));
-  };
+    const selectedRange = event.target.value
+    setTimeRange(selectedRange)
+    setFilteredData(filterData(selectedRange))
+    // llmResponse(filteredData)
+  }
+
+  
+
 
   if(dataF)
   return (
     <>
+      <div className="nav">
       <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
         <button onClick={toggleSidebarL} className="close-btn">✖</button>
         <ul className="sidebar-tabs">
@@ -705,23 +941,30 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
           {user&&user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
           {user&&user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user&&user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
           {user?null:<Navigate to={window.localStorage.getItem('lastVisitedPage')}/>}
           <li><Link to="/"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
+      
+      
       <div className='navbar'>
+      <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
         <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
       </svg></p>
+      </div>
         <p  className='patient'>{dataF.name}</p>
       </div>
+    </div>
+      <Notification message={message}/>
       <div className={`sidebarR ${isSideOpenRP ? 'open' : ''}`}>
         <div>
           <button onClick={toggleSidebarRP} className="close-btn">✖</button>
           <p className="sidebarComm">Previous Prescriptions</p>
           <ul className="sidebar-tabs">
-            {Object.entries(dataF.data).map(([key,value],index)=><li key={index} className='comments'><div><p>{key}</p><p>{value.patientComments}</p></div></li>)}
+            {Object.entries(dataF.data).map(([key,value],index)=><li key={index} className='comments'><div><p>{key}</p><p>{value.previousPrescriptions}</p></div></li>)}
           </ul>
         </div>
         <div className="givePrescription">
@@ -743,7 +986,8 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
       </div>
 
       <div className='aicomment'>
-        <p>Ai Comments</p>
+        {/*<p>Ai Comments</p>*/}
+        {LLM==''?<p>Ai Comments</p>:<p>{LLM}</p>}
       </div>
 
       <div className='patientRow'>
@@ -770,7 +1014,8 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             <Line data={createChartData("Heart Rate", Object.keys(filteredData),Object.values(filteredData).map((value) => value.heartRate))} />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {/*<p>Ai Comments</p>*/}
+            {LLMHR==''?<p>Ai Comments</p>:<p>{LLMHR}</p>}
           </div>
         </div>
         <div className="image-block">
@@ -781,15 +1026,16 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
                 labels: Object.keys(filteredData),
                 datasets: [
                   {
+
                     label: "Systolic",
-                    data: Object.values(filteredData).map((value) => value.bloodPressure.systolic),
+                    data: Object.values(filteredData).map((value) =>  value?.bloodPressure?.systolic ?? null),
                     borderColor: "rgba(255,99,132,1)",
                     backgroundColor: "rgba(255,99,132,0.2)",
                     fill: true,
                   },
                   {
                     label: "Diastolic",
-                    data: Object.values(filteredData).map((value) => value.bloodPressure.diastolic),
+                    data: Object.values(filteredData).map((value) =>  value?.bloodPressure?.diastolic ?? null),
                     borderColor: "rgba(54,162,235,1)",
                     backgroundColor: "rgba(54,162,235,0.2)",
                     fill: true,
@@ -799,7 +1045,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {LLMBP==''?<p>Ai Comments</p>:<p>{LLMBP}</p>}
           </div>
         </div>
         <div className="image-block">
@@ -809,7 +1055,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             <Line data={createChartData("Oxygen Level", Object.keys(filteredData),Object.values(filteredData).map((value) => value.oxygenLevel))} />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {LLMOL==''?<p>Ai Comments</p>:<p>{LLMOL}</p>}
           </div>
         </div>
         <div className="image-block">
@@ -819,7 +1065,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             <Line data={createChartData("Glucose Level", Object.keys(filteredData),Object.values(filteredData).map((value) => value.glucoseLevel))} />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {LLMGL==''?<p>Ai Comments</p>:<p>{LLMGL}</p>}
           </div>
         </div>
         <div className="image-block">
@@ -829,7 +1075,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             <Line data={createChartData("Temperature", Object.keys(filteredData),Object.values(filteredData).map((value) => value.temperature))} />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {LLMT==''?<p>Ai Comments</p>:<p>{LLMT}</p>}
           </div>
         </div>
         <div className="image-block">
@@ -839,7 +1085,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
             <Line data={createChartData("Pain", Object.keys(filteredData),Object.values(filteredData).map((value) => value.pain))} />
           </div>
           <div className='aicomment'>
-            <p>Ai Comments</p>
+            {LLMP==''?<p>Ai Comments</p>:<p>{LLMP}</p>}
           </div>
         </div>
       </div>
@@ -854,7 +1100,104 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     </>
   )
 }
-const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser})=>{
+
+const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
+  const [patient,setPatient] = useState([])
+  const [advice, setAdvice] = useState('')
+
+  const getP = async () => {
+      const p = await patientService.getPatientsData(user.name)
+      setPatient(patientsData[1])
+      // console.log(JSON.stringify(p[0].data)+'USER Routine '+user.routine)
+  }
+  // const getA = async ()=>{
+  //   const a = await 
+  // }
+  const llmResponse = async (input)=>{
+    const jsonInput = JSON.stringify(input)
+    const escapedJson = JSON.stringify(jsonInput)
+    // console.log(escapedJson)
+    // console.log(escapedJson)
+    const resp  = await llmService.getLlmResponse2(escapedJson)
+    // console.log(resp)
+    const newResp = await llmService.getLlmResponse3(JSON.stringify(resp))
+    setAdvice(newResp.choices[0].message.content)
+    // console.log(resp.choices[0].message.content)
+  }
+
+  useEffect(() => {
+    if(user) {
+      localStorage.setItem("lastVisitedPage", "/advice")
+    }
+  }, [user])
+
+  useEffect(()=>{
+    if(isSideOpenL)
+    toggleSidebarL()
+    getP()
+  },[])
+
+  useEffect(()=>{
+    llmResponse(JSON.stringify(patient.data)+' USER ROUTINE '+user.routine)
+  },[patient])
+
+  if (!patient || patient.length === 0) {
+    return <div>Loading...</div>
+  }
+
+  // if (!dataF || !dataF.data) {
+  //   return <div>Error: No patient data found.</div>
+  // }
+
+  return (
+    <div>
+    <div className="nav">
+      <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
+        <button onClick={toggleSidebarL} className="close-btn">✖</button>
+        <ul className="sidebar-tabs">
+          <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
+  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+  <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+</svg></li>
+          <li><Link to="/profile">Profile</Link></li>
+          <li><Link to="/settings">Settings</Link></li>
+          {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
+          {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+          {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
+        </ul>
+      </div>
+      
+      <div className='navbar'>
+      <div className="hover">
+        <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
+        <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+      </svg></p>
+      </div>
+        <p  className='patient'>{user.name}</p>
+      </div>
+    </div>
+      <Notification message={message}/>
+      <div className="image-container">
+        {/*<h2>Doctor Prescriptions</h2>*/}
+        <ul className="sidebar-tabs2">
+          <h2>Doctor Prescriptions</h2>
+          {patient.data!=null?Object.entries(patient.data).map(([key,value],index)=>
+            <li key={index} className='comments'><div><p>{key}</p><p>{value.previousPrescriptions}</p></div></li>
+          ):<p>No Data</p>}
+        </ul>
+        <ul className="sidebar-tabs2" >
+          <h2>Ai advice</h2>
+          <li className="comments"><p></p><p>{advice!=''?advice:null}</p></li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
   const [height,setHeight] = useState(0)
   const [weight,setWeight] = useState(0)
   const [bmi,setBmi] = useState(0)
@@ -909,6 +1252,7 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser})=>{
   }
   return (
     <>
+    <div className="nav">
     <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
         <button onClick={toggleSidebarL} className="close-btn">✖</button>
         <ul className="sidebar-tabs">
@@ -921,37 +1265,47 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser})=>{
           {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
-          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload();}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
+      
+      
       <div className='navbar'>
+      <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
         <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
       </svg></p>
+      </div>
         <p  className='patient'>{user.name}</p>
       </div>
-    <div>
-      <form onSubmit={submitHandler}>
-        <p>Height: <input onChange={(e)=>handler(e,setHeight)} value={height} type="number" /> </p>
-        <p>Weight: <input onChange={(e)=>handler(e,setWeight)} value={weight} type='number'/></p>
-        <p>Bmi: <input onChange={(e)=>handler(e,setBmi)} value={bmi} type="number" /> </p>
-        <p>Heart Rate: <input onChange={(e)=>handler(e,setHeartRate)} value={heartRate} type='number'/></p>
-        <p>Blood Pressure: Systolic: <input onChange={(e)=>handler(e,setSystolic)}value={systolic} type="number" /> 
-         Diastolic:  <input onChange={(e)=>handler(e,setDiastolic)} value={diastolic} type='number'/></p>
-        <p>Oxygen Level: <input onChange={(e)=>handler(e,setOxygen)} value={oxygen} type="number" /> </p>
-        <p>Patient Commnet: <input onChange={(e)=>handler(e,setComment)} value={comment} type='string'/></p>
-        <p>Glucose Level: <input onChange={(e)=>handler(e,setGlucose)} value={glucose} type="number" /> </p>
-        <p>Temperature: <input onChange={(e)=>handler(e,setTemperature)} value={temperature} type='number'/></p>
-        <p>Pain:(1-5) <input onChange={(e)=>handler(e,setPain)} value={pain} type="number" /> </p>
-        
-        <button type="submit">Add</button>
-      </form>
+    </div>
+    <Notification message={message}/>  
+    <div className="container">
+      <div className="profile">
+        <h2>Add Today's Data</h2>
+        <form onSubmit={submitHandler}>
+          <p>Height: <input onChange={(e)=>handler(e,setHeight)} value={height} type="number" /> </p>
+          <p>Weight: <input onChange={(e)=>handler(e,setWeight)} value={weight} type='number'/></p>
+          <p>Bmi: <input onChange={(e)=>handler(e,setBmi)} value={bmi} type="number" /> </p>
+          <p>Heart Rate: <input onChange={(e)=>handler(e,setHeartRate)} value={heartRate} type='number'/></p>
+          <p>Blood Pressure: <p style={{backgroundColor:'ghostwhite'}}>Systolic: <input onChange={(e)=>handler(e,setSystolic)}value={systolic} type="number" /> 
+           </p><p style={{backgroundColor:'ghostwhite'}}>Diastolic:  <input onChange={(e)=>handler(e,setDiastolic)} value={diastolic} type='number'/></p></p>
+          <p >Oxygen Level: <input onChange={(e)=>handler(e,setOxygen)} value={oxygen} type="number" /> </p>
+          <p>Patient Comment: <textarea onChange={(e)=>handler(e,setComment)} value={comment} type='string'/></p>
+          <p>Glucose Level: <input onChange={(e)=>handler(e,setGlucose)} value={glucose} type="number" /> </p>
+          <p>Temperature: <input onChange={(e)=>handler(e,setTemperature)} value={temperature} type='number'/></p>
+          <p>Pain:(1-5) <input onChange={(e)=>handler(e,setPain)} value={pain} type="number" /> </p>
+          
+          <button type="submit">Add</button>
+        </form>
+      </div>
     </div>
     </>
   )
 }
-const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser}) =>{
+const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage}) =>{
   const [name,setName]= useState('')
   const [phone,setPhone] = useState(null)
   useEffect(() => {
@@ -965,6 +1319,11 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser}) =>{
     if(isSideOpenL)
     toggleSidebarL()
   },[])
+
+  // setMessage(`Added ${toAdd.name}`)
+  // setTimeout(()=>{
+  //   setMessage(null)
+  // },5000)
 
   const nameHandler = (event)=>{
     setName(event.target.value)
@@ -983,6 +1342,10 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser}) =>{
 
       // const lastVisitedPage = localStorage.getItem("lastVisitedPage") || "/patients"
       // navigate(lastVisitedPage)
+      setMessage(`Added ${name}`)
+      setTimeout(()=>{
+        setMessage(null)
+      },5000)
     } catch (exception) {
       console.error('Error when adding patient: ', exception)
       alert('something wrong. find out')
@@ -990,6 +1353,7 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser}) =>{
   }
   return (
     <div>
+    <div className="nav">
       <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
         <button onClick={toggleSidebarL} className="close-btn">✖</button>
         <ul className="sidebar-tabs">
@@ -1002,22 +1366,32 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser}) =>{
           {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
+      
+      <Notification message={message}/>
       <div className='navbar'>
+      <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
   <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
 </svg></p>
+      </div>
         <p  className='patient'>{user.name}</p>
 
       </div>
-      <form onSubmit={submitHandler}>
-        <p>Name: <input onChange={(e)=>nameHandler(e)} type="string" /> </p>
-        <p>Phone: <input onChange={(e)=>phoneHandler(e)} type='number'/></p>
-        <button type="submit">Add</button>
-      </form>
+    </div>
+      <div className="container">
+        <div className="profile">
+          <form onSubmit={submitHandler}>
+            <p>Name: <input onChange={(e)=>nameHandler(e)} type="string" /> </p>
+            <p>Phone: <input onChange={(e)=>phoneHandler(e)} type='number'/></p>
+            <button type="submit">Add</button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1029,6 +1403,7 @@ function App() {
   const [isSideOpenRP, setIsSideOpenRP] = useState(false)
   const [isSideOpenRC, setIsSideOpenRC] = useState(false)
   const [user, setUser] = useState(null)
+  const [message, setMessage] = useState(null)
 
 
   
@@ -1068,29 +1443,31 @@ function App() {
         <Routes>
 
             <Route path="/" element={user ? <Navigate to="/profile" /> : <Navigate to="/login" />} />
-            <Route path="/login" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<LoginPage user ={user}  setUser ={setUser}/>} />
+            <Route path="/login" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<LoginPage user ={user}  message={message} setMessage={setMessage} setUser ={setUser}/>} />
 
             {/*<Route path="/dashboard" element={user?<Dashboard data={[]} user={user} toggleSidebarRC={toggleSidebarRC} toggleSidebarRP={toggleSidebarRP}
                 toggleSidebarL={toggleSidebarL} isSideOpenL={isSideOpenL} setIsSideOpenL={setIsSideOpenL} 
                 isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRC={isSideOpenRC}
                 setIsSideOpenRC={setIsSideOpenRC} />:<Navigate to={lastVisitedPage||"/login"}/>} />
             */}
-            <Route path="/profile" element={user?<Profile user={user} setUser ={setUser} isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} />:<Navigate to='/login'/>} />
+            <Route path="/profile" element={user?<Profile user={user} setUser ={setUser} isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}  message={message} setMessage={setMessage}/>:<Navigate to='/login'/>} />
             
-            <Route path="/settings" element={user?<Settings user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} />:<Navigate to="/login"/>} />
+            <Route path="/settings" element={user?<Settings user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}  message={message} setMessage={setMessage}/>:<Navigate to="/login"/>} />
             
-            <Route path="/patients" element={user?<Patients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}/>:<Navigate to="/login"/>} />
+            <Route path="/patients" element={user?<Patients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/>:<Navigate to="/login"/>} />
 
-            <Route path="/add" element={user?<AddPatients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}/>:<Navigate to="/login"/>} />
+            <Route path="/add" element={user?<AddPatients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/>:<Navigate to="/login"/>} />
             
             <Route path="/dashboard/:id" element={<Dashboard data={patientsData} user={user} toggleSidebarRC={toggleSidebarRC} toggleSidebarRP={toggleSidebarRP}
                 toggleSidebarL={toggleSidebarL} isSideOpenL={isSideOpenL} setIsSideOpenL={setIsSideOpenL} 
                 isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRC={isSideOpenRC}
-                setIsSideOpenRC={setIsSideOpenRC}/>}/>
+                setIsSideOpenRC={setIsSideOpenRC} message={message} setMessage={setMessage}/>}/>
 
-            <Route path="/addInfo" element={user ? <AddInfo  user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} /> : <Navigate to="/login" />} />
+            <Route path="/advice" element={user?<Advice user={user} setUser ={setUser} isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}  message={message} setMessage={setMessage}/>:<Navigate to="/login"/>}/>
 
-            <Route path="/create" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<CreateAccount user ={user}  setUser ={setUser}/>} />
+            <Route path="/addInfo" element={user ? <AddInfo  user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/> : <Navigate to="/login" />} />
+
+            <Route path="/create" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<CreateAccount user ={user}  setUser ={setUser} message={message} setMessage={setMessage}/>} />
 
             <Route path="*" element={user?<Navigate to="/profile" />:<Navigate to={lastVisitedPage||"/login"}/>} />
         </Routes>

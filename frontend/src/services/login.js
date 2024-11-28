@@ -11,4 +11,5 @@ const create = async (credentials)=>{
   const request = await axios.post('http://localhost:3001/api/user',credentials)
   return request.data
 }
+
 export default { login,create }

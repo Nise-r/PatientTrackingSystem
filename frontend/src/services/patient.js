@@ -64,6 +64,15 @@ const getPatients = async (user)=>{
   const request = await axios.get('http://localhost:3001/api/user',config)
   return request.data.find(u => user.username === "blaa").patients
 }
+
+const edit = async (credentials)=>{
+  const config = {
+    headers: {Authorization:token}, 
+  }
+  const request = await axios.post('http://localhost:3001/api/user/edit',credentials,config)
+  return request.data
+}
+
 export default { getAll, create ,setToken,
  addPatient,addPatientData,getPatients,
- getPatientsData, addPrescription}
+ getPatientsData, addPrescription,edit }

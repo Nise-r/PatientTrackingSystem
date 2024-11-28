@@ -8,6 +8,7 @@ const loginRouter = require('./controller/login')
 const logger = require('./utils/logger')
 const middleware = require('./utils/middleware')
 const mongoose = require('mongoose')
+const multer = require('multer') 
 
 
 
@@ -34,7 +35,7 @@ connectDB()
 // })
 
 
-
+app.use('/uploads', express.static('uploads'));
 app.use(cors())
 app.use(express.static('dist'))
 app.use(express.json())

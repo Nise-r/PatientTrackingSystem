@@ -26,7 +26,19 @@ const userSchema = new mongoose.Schema({
 	}],
 	phone:Number,
 	email:String,
-	type:String
+	type:String,
+	profilePicture:{
+		data: Buffer,
+		contentType:String
+	},
+	address:{
+		street:String,
+		city:String,
+		state:String,
+		zipcode:String,
+		country: String
+	},
+	routine: String
 
 })
  userSchema.set('toJSON',{

@@ -80,7 +80,7 @@ const getLlmResponse2 = async (input) => {
   // console.log(request.data)
   return request.data
 }
-const getLlmResponse3 = async (input) => {
+const getLlmResponseAdvice = async (input,patientComments,previousPrescriptions,routine) => {
   const request = await axios.post(
       baseUrl,
       {
@@ -88,7 +88,34 @@ const getLlmResponse3 = async (input) => {
           "messages": [
             {
                 "role": "system",
-                "content": "You are a health advisor. you will be given the summary of how the patient can improve their health based on their vitals. You need to format the given text and remove every details about vitals and make sure the response only contains advice on routine and day to day life of patient."
+                "content": "You are a medical data analyst. you are given  data on patient routine, their comments on day to day health and doctor prescriptions. You need to analyze the data and provide advice on how can they better their routine and some activities to improve health."
+            },
+            {
+                "role": "user",
+                "content": `DATA: ${input}` + `\nPATIENT_COMMENTS: ${patientComments}.\n DOCTOR_PRESCRIPTIONS: ${previousPrescriptions}.\n ROUTINE: ${routine}. `
+            }
+          ]
+      },
+      {
+          headers: {
+              'Authorization': `Bearer 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`,
+              'Content-Type': 'application/json',
+          },
+      }
+  )
+  // console.log(request.data)
+  return request.data
+}
+
+const getLlmResponseClean = async (input) => {
+  const request = await axios.post(
+      baseUrl,
+      {
+          "model": "llama3-8b-8192",
+          "messages": [
+            {
+                "role": "system",
+                "content": "You role is to clean the data. you will be given the summary of how the patient can improve their health. You need to format the given text to remove information related to vitals.Remove every special character like '*' and points should be numbered. Also remove any text that identify the response as machine generated."
             },
             {
                 "role": "user",
@@ -106,4 +133,4 @@ const getLlmResponse3 = async (input) => {
   // console.log(request.data)
   return request.data
 }
-export default { getLlmResponse ,getLlmResponse2, getLlmResponse3, getLlmResponseSpecific}
+export default { getLlmResponse ,getLlmResponse2, getLlmResponseClean, getLlmResponseSpecific, getLlmResponseAdvice}

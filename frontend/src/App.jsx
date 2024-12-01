@@ -445,6 +445,7 @@ const Profile=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
             {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
             {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
             {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+            {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
             <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
             {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
           </ul>
@@ -509,6 +510,7 @@ const Settings=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
@@ -578,6 +580,7 @@ const Patients= ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
             {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
             {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
             {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+            {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
             <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
             {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
           </ul>
@@ -789,6 +792,10 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
 
   const id = useParams().id
 
+  useEffect(()=>{
+    if(user==null) navigate('/login')
+  },[])
+
   const getP = async () => {
       const p = await patientService.getPatientsData(id)
       // const resp  = await llmService.getLlmResponse('what is the capital of india')
@@ -902,7 +909,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     specificLlmResponse(specificData('temperature'),'temperature')
     specificLlmResponse(specificData('oxygenLevel'),'oxygenLevel')
     specificLlmResponse(specificData('bloodPressure'),'bloodPressure')
-    console.log(specificData('glucoseLevel'))
+    // console.log(specificData('glucoseLevel'))
     // console.log(specificData('bloodPressure'))
     // console.log(specificData('bloodPressure'))
   },[filteredData])
@@ -961,7 +968,8 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
           {user&&user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
           {user?null:<Navigate to={window.localStorage.getItem('lastVisitedPage')}/>}
-          <li><Link to="/"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          <li><Link to="/"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload();}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
@@ -1133,20 +1141,31 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
   // const getA = async ()=>{
   //   const a = await 
   // }
-  const llmResponse = async (input)=>{
-    const jsonInput = JSON.stringify(input)
-    const escapedJson = JSON.stringify(jsonInput)
-    // console.log(escapedJson)
-    // console.log(escapedJson)
-    const resp  = await llmService.getLlmResponse2(escapedJson)
-    // console.log(resp)
-    const newResp = await llmService.getLlmResponse3(JSON.stringify(resp))
+  const llmResponse = async (input,patientComments,previousPrescriptions,routine)=>{
+    // console.log(input)
+    // console.log(patientComments)
+    // console.log(previousPrescriptions)
+    // console.log(routine)
+
+    // const jsonInput = JSON.stringify(input)
+    // const escapedJson = JSON.stringify(jsonInput)
+
+    const ip = JSON.stringify(input)
+    const pc = JSON.stringify(patientComments)
+    const pp = JSON.stringify(previousPrescriptions)
+    const rt = JSON.stringify(routine)
+
+    
+    // const resp  = await llmService.getLlmResponse2(escapedJson)
+    const resp = await llmService.getLlmResponseAdvice(ip,pc,pp,rt)
+    // console.log(resp.choices[0].message.content)
+    const newResp = await llmService.getLlmResponseClean(JSON.stringify(resp))
 
     // setAdvice(newResp.choices[0].message.content)
-    // console.log(newResp.choices[0].message.content)
+    // console.log(newResp.choices[0].message.content.split("\n"))
 
-    setAdvice(newResp.choices[0].message.content.split("\n").filter((line) => line.startsWith("*")).map((item, index) => item.replace("* ", "")))
-    console.log(newResp.choices[0].message.content.split("\n").filter((line) => line.startsWith("*")).map((item, index) => item.replace("* ", "")))
+    setAdvice(newResp.choices[0].message.content.split("\n"))
+    // console.log(newResp.choices[0].message.content.split("\n"))
     
   }
 
@@ -1164,7 +1183,10 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
 
   useEffect(()=>{
     if(patient && patient.data && !llmCalled){
-      llmResponse(JSON.stringify(patient.data)+' USER ROUTINE '+user.routine)
+      // llmResponse(JSON.stringify(patient.data)+' USER ROUTINE '+user.routine)
+      llmResponse(patient.data,Object.entries(patient.data).reduce((acc,[key,value])=>
+            {acc[key] = value.patientComments;return acc},{}),Object.entries(patient.data).reduce((acc,[key,value])=>
+            {acc[key] = value.previousPrescriptions;return acc},{}),user.routine)
       setLlmCalled(true)
     }
   },[patient])
@@ -1193,6 +1215,7 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
@@ -1309,7 +1332,9 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload();}}>Logout</Link></li>
+          
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
@@ -1351,6 +1376,7 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
 const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage}) =>{
   const [name,setName]= useState('')
   const [phone,setPhone] = useState(null)
+
   useEffect(() => {
     if (user) {
       // Save the current path in localStorage
@@ -1410,7 +1436,9 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+          
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
@@ -1439,7 +1467,59 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage
     </div>
   )
 }
+const Nearby = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
 
+
+  useEffect(() => {
+    if (user) {
+      // Save the current path in localStorage
+      localStorage.setItem("lastVisitedPage", "/nearby");
+    }
+  }, [user]);
+
+  useEffect(()=>{
+    if(isSideOpenL)
+    toggleSidebarL()
+  },[])
+
+  return (
+    <>
+      <div className="nav">
+      <div className={`sidebarL ${isSideOpenL ? 'open' : ''}`}>
+        <button onClick={toggleSidebarL} className="close-btn">✖</button>
+        <ul className="sidebar-tabs">
+          <li><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" className="bi bi-person-circle" viewBox="0 0 16 16">
+  <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+  <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+</svg></li>
+          <li><Link to="/profile">Profile</Link></li>
+          <li><Link to="/settings">Settings</Link></li>
+          {user.type=='doctor'?<li><Link to="/patients">Patients</Link></li>:null}
+          {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
+          {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
+          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
+          
+          {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
+        </ul>
+      </div>
+      
+      
+      <div className='navbar'>
+      <div className="hover">
+        <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
+  <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+</svg></p>
+      </div>
+        <p  className='patient'>{user.name}</p>
+
+      </div>
+    </div>
+    </>
+  )
+
+}
 
 function App() {
   const [count, setCount] = useState(0)
@@ -1512,6 +1592,8 @@ function App() {
             <Route path="/addInfo" element={user ? <AddInfo  user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/> : <Navigate to="/login" />} />
 
             <Route path="/create" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<CreateAccount user ={user}  setUser ={setUser} message={message} setMessage={setMessage}/>} />
+
+            {/*<Route path="/nearby" element={user?<Nearby user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage} />:<Navigate to="/login"/>} />*/}
 
             <Route path="*" element={user?<Navigate to="/profile" />:<Navigate to={lastVisitedPage||"/login"}/>} />
         </Routes>

@@ -3,6 +3,8 @@ const loginRouter = require('express').Router()
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
 
+// const opencage = require('opencage-api-client')
+
 
 loginRouter.post('/',async (request,response)=>{
 	const { username, password} = request.body
@@ -23,6 +25,11 @@ loginRouter.post('/',async (request,response)=>{
 		process.env.SECRET,
 		{expiresIn:60*60}
 	)
+
+	// opencage.geocode({ q: 'skit, ramnagaria, jaipur, rajasthan,india' }).then((data) => {
+	//   console.log(data.results[0].geometry)
+	//   // { "lat": 49.2909409, "lng": -123.024879 }
+	// }).catch((error) => { console.warn(error.message) })
 
 	response.status(200).send({token:token,username:user.username,name:user.name,phone:user.phone,type:user.type,email:user.email,address:user.address,routine:user.routine})
 })

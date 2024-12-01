@@ -124,12 +124,21 @@ patientRouter.post('/', async (request, response,next) => {
       temperature:body.temperature,
       pain:body.pain
   }
-  const updates = {
-    height:body.height,
-    weight:body.weight,
-    bmi:body.bmi,
-    [`data.${curr}`]: newMedical,
+  let updates = {}
+  if(body.weight!=0){
+    updates = {
+      height:body.height,
+      weight:body.weight,
+      bmi:body.bmi,
+      [`data.${curr}`]: newMedical,
+    }
   }
+  else{
+    updates = {
+      [`data.${curr}`]: newMedical,
+    }
+  }
+  
   
   const savedPatient = await Patients.findOneAndUpdate({'name':decodedToken.name,'phone':decodedToken.phone},
     { $set: updates })

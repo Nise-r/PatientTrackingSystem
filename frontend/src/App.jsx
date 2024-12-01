@@ -459,7 +459,7 @@ const Profile=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
         <p  className='patient'> {user.name}</p>
       </div>
     </div>
-    <Notification message={message}/>
+    <Notification message={message} className="notification"/>
     <div className="container">
       <div className="profile">
         <h2>Profile</h2>
@@ -513,7 +513,7 @@ const Settings=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
       </div>
-      {/*<Notification message={message}/>*/}
+      {/*<Notification message={message} className="notification"/>*/}
       
       <div className='navbar'>
       <div className="hover">
@@ -524,11 +524,11 @@ const Settings=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
         <p  className='patient'>{user.name}</p>
       </div>
     </div>
-    <Notification message={message}/>
+    <Notification message={message} className="notification"/>
     <div className="container">
       <div className="profile">
         <p>Theme Preferences:Light Dark</p>
-        <p>Language Settings: English Hindi</p>
+        <p>Language Settings: English</p>
         <p>Time zone: India</p>
       </div>
       {/*<p>These are settings</p>*/}
@@ -551,8 +551,10 @@ const Patients= ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
     toggleSidebarL()
   },[])
   const getP = async ()=>{
-    const patients = await patientService.getPatients(user)
-    setPatients(patients)
+    // console.log(user)
+    const patient = await patientService.getPatients(user)
+    // console.log(patient)
+    setPatients(patient)
   }
   useEffect(()=>{
     getP()
@@ -591,7 +593,7 @@ const Patients= ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
 
         </div>
       </div>
-      <Notification message={message}/>
+      <Notification message={message} className="notification"/>
       <div className="container">
         <div className="profile">
           {/*{Object.entries(patientsData).map(([key,value])=><p key = {key} onClick={()=>navigate('/dashboard/'+value.name)}>{value.name}  {value.phone}</p>)}*/}
@@ -692,11 +694,11 @@ const CreateAccount = ({message,setMessage})=>{
     <div className="container">
       <div className="profile">
         <h2>Create Account</h2>
-        <Notification message={message}/>
+        <Notification message={message} className="notification"/>
         <form onSubmit={submitHandler}>
           <p>Username: <input onChange={(e)=>handler(e,setUsername)} type='string'/></p>
           <p>Name: <input onChange={(e)=>handler(e,setName)} type='string'/></p>
-          <p>Password: <input onChange={(e)=>handler(e,setPassword)} type='string'/></p>
+          <p>Password: <input onChange={(e)=>handler(e,setPassword)} type='password'/></p>
           <p>Phone: <input onChange={(e)=>handler(e,setPhone)} type='number'/></p>
           <p>Email: <input onChange={(e)=>handler(e,setEmail)} type='string'/></p>
           <div className="container" style={{margin:'10px'}} onChange={(e)=>handler(e,setType)}>
@@ -754,13 +756,13 @@ const LoginPage = ({setUser,message,setMessage})=>{
   }
 
   return (
-    <div className="container">
+    <div className="container" style={{marginTop:'100px'}}>
       <div className="profile">
         <h2>Login</h2>
-        <Notification message={message}/>
+        <Notification message={message} className="notification"/>
         <form onSubmit={submitHandler}>
           <p>Username: <input onChange={(e)=>userHandler(e)} type='string'/></p>
-          <p>Password: <input onChange={(e)=>passHandler(e)} type='string'/></p>
+          <p>Password: <input onChange={(e)=>passHandler(e)} type='password'/></p>
           <button type='submit'>Login</button>
         </form>
         <Link to="/create">create account</Link>
@@ -781,6 +783,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
   const [LLMOL,setLLMOL] = useState('')
   const [LLMT,setLLMT] = useState('')
   const [LLMP,setLLMP] = useState('')
+  // const [prevPres,setPrevPres] = useState(null)
   const navigate = useNavigate()
 
 
@@ -803,7 +806,18 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
       const name = patient[0].name
       const addPres = await patientService.addPrescription({ name, comment })
 
+      // console.log(addPres)
+      // const toAdd = Array.from(Object.entries(addPres.data).map(([key,value])=>value.previousPrescriptions))
+      // console.log(toAdd)
+
+      // setPrevPres(toAdd)
       setComment('')
+      // dataF = await addPres
+
+      setMessage('Added Today\'s prescription')
+      setTimeout(()=>{
+        setMessage(null)
+      },5000)
 
     } catch (exception) {
       console.error('comment failed: ', exception)
@@ -814,6 +828,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
   useEffect(() => {
     getP()
   }, [id])
+
 
   const filterData = (range) => {
     const now = new Date();
@@ -855,18 +870,19 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     const jsonInput = JSON.stringify(input)
     const escapedJson = JSON.stringify(jsonInput)
     // console.log(escapedJson)
-    const resp  = await llmService.getLlmResponse(escapedJson)
+    const resp  = await llmService.getLlmResponseSpecific(escapedJson,cmd)
     // console.log(resp.choices[0].message.content)
-    if(cmd=='hr') setLLMHR(resp.choices[0].message.content)
-    if(cmd=='gl') setLLMGL(resp.choices[0].message.content)
-    if(cmd=='p') setLLMP(resp.choices[0].message.content)
-    if(cmd=='t') setLLMT(resp.choices[0].message.content)
-    if(cmd=='ol') setLLMOL(resp.choices[0].message.content)
-    if(cmd=='bp') setLLMBP(resp.choices[0].message.content)
+    if(cmd=='heartRate') setLLMHR(resp.choices[0].message.content)
+    if(cmd=='glucoseLevel') setLLMGL(resp.choices[0].message.content)
+    if(cmd=='pain') setLLMP(resp.choices[0].message.content)
+    if(cmd=='temperature') setLLMT(resp.choices[0].message.content)
+    if(cmd=='oxygenLevel') setLLMOL(resp.choices[0].message.content)
+    if(cmd=='bloodPressure') setLLMBP(resp.choices[0].message.content)
     // console.log(resp.choices[0].message.content)
   }
 
   const dataF = patient[0]
+
 
   useEffect(() => {
     if (user && dataF && dataF.name) {
@@ -880,12 +896,14 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
 
   useEffect(()=>{
     llmResponse(filteredData)
-    specificLlmResponse(specificData('heartRate'),'hr')
-    specificLlmResponse(specificData('glucoseLevel'),'gl')
-    specificLlmResponse(specificData('pain'),'p')
-    specificLlmResponse(specificData('temperature'),'t')
-    specificLlmResponse(specificData('oxygenLevel'),'ol')
-    specificLlmResponse(specificData('bloodPressure'),'bp')
+    specificLlmResponse(specificData('heartRate'),'heartRate')
+    specificLlmResponse(specificData('glucoseLevel'),'glucoseLevel')
+    specificLlmResponse(specificData('pain'),'pain')
+    specificLlmResponse(specificData('temperature'),'temperature')
+    specificLlmResponse(specificData('oxygenLevel'),'oxygenLevel')
+    specificLlmResponse(specificData('bloodPressure'),'bloodPressure')
+    console.log(specificData('glucoseLevel'))
+    // console.log(specificData('bloodPressure'))
     // console.log(specificData('bloodPressure'))
   },[filteredData])
 
@@ -958,7 +976,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
         <p  className='patient'>{dataF.name}</p>
       </div>
     </div>
-      <Notification message={message}/>
+      <Notification message={message} className="notification"/>
       <div className={`sidebarR ${isSideOpenRP ? 'open' : ''}`}>
         <div>
           <button onClick={toggleSidebarRP} className="close-btn">✖</button>
@@ -1104,10 +1122,12 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
 const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
   const [patient,setPatient] = useState([])
   const [advice, setAdvice] = useState('')
+  const [llmCalled, setLlmCalled] = useState(false)
 
   const getP = async () => {
       const p = await patientService.getPatientsData(user.name)
-      setPatient(patientsData[1])
+      // console.log(p)
+      setPatient(p[0])
       // console.log(JSON.stringify(p[0].data)+'USER Routine '+user.routine)
   }
   // const getA = async ()=>{
@@ -1121,8 +1141,13 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
     const resp  = await llmService.getLlmResponse2(escapedJson)
     // console.log(resp)
     const newResp = await llmService.getLlmResponse3(JSON.stringify(resp))
-    setAdvice(newResp.choices[0].message.content)
-    // console.log(resp.choices[0].message.content)
+
+    // setAdvice(newResp.choices[0].message.content)
+    // console.log(newResp.choices[0].message.content)
+
+    setAdvice(newResp.choices[0].message.content.split("\n").filter((line) => line.startsWith("*")).map((item, index) => item.replace("* ", "")))
+    console.log(newResp.choices[0].message.content.split("\n").filter((line) => line.startsWith("*")).map((item, index) => item.replace("* ", "")))
+    
   }
 
   useEffect(() => {
@@ -1138,7 +1163,10 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
   },[])
 
   useEffect(()=>{
-    llmResponse(JSON.stringify(patient.data)+' USER ROUTINE '+user.routine)
+    if(patient && patient.data && !llmCalled){
+      llmResponse(JSON.stringify(patient.data)+' USER ROUTINE '+user.routine)
+      setLlmCalled(true)
+    }
   },[patient])
 
   if (!patient || patient.length === 0) {
@@ -1179,19 +1207,28 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
         <p  className='patient'>{user.name}</p>
       </div>
     </div>
-      <Notification message={message}/>
+      <Notification message={message} className="notification"/>
       <div className="image-container">
         {/*<h2>Doctor Prescriptions</h2>*/}
-        <ul className="sidebar-tabs2">
-          <h2>Doctor Prescriptions</h2>
+        <ul className="sidebar-tabs2" style={{background:'rgba(255,0,0,0.2)',padding:'10px',borderRadius:'10px',border:'2px solid black'}}>
+          <h2 style={{display:'flex',justifyContent:'center'}}>Doctor Prescriptions</h2>
           {patient.data!=null?Object.entries(patient.data).map(([key,value],index)=>
             <li key={index} className='comments'><div><p>{key}</p><p>{value.previousPrescriptions}</p></div></li>
           ):<p>No Data</p>}
         </ul>
-        <ul className="sidebar-tabs2" >
+
+        {/*<ul className="sidebar-tabs2" >
           <h2>Ai advice</h2>
           <li className="comments"><p></p><p>{advice!=''?advice:null}</p></li>
-        </ul>
+        </ul>*/}
+          <ul className="sidebar-tabs2" style={{background:'rgba(0,180,255,0.2)',padding:'10px',borderRadius:'10px',border:'2px solid black'}}>
+            <h2 style={{display:'flex',justifyContent:'center'}}>Ai advice</h2>
+            {advice!=''?advice.map((rec, index) => (
+              <li key={index} className="comments">
+                {rec}
+              </li>
+            )):null}
+          </ul>
       </div>
     </div>
   )
@@ -1209,6 +1246,7 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
   const [glucose,setGlucose ] = useState(0)
   const [temperature,setTemperature] =useState(0)
   const [pain,setPain] = useState(0)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if(user) {
@@ -1239,7 +1277,12 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
       setTemperature(0)
       setPain(0)
 
+      setMessage('Succesfully added Today\'s data')
+      setTimeout(()=>{
+        setMessage(null)
+      },5000)
 
+      // navigate('/addInfo')
     } catch (exception) {
       console.error('Error when adding patients data: ', exception)
       alert('something wrong. find out')
@@ -1281,7 +1324,7 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
         <p  className='patient'>{user.name}</p>
       </div>
     </div>
-    <Notification message={message}/>  
+    <Notification message={message} className="notification"/>  
     <div className="container">
       <div className="profile">
         <h2>Add Today's Data</h2>
@@ -1372,7 +1415,7 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage
         </ul>
       </div>
       
-      <Notification message={message}/>
+      
       <div className='navbar'>
       <div className="hover">
         <p className='button' onClick={()=>{toggleSidebarL()}}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
@@ -1383,6 +1426,7 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage
 
       </div>
     </div>
+      <Notification message={message} className="notification"/>
       <div className="container">
         <div className="profile">
           <form onSubmit={submitHandler}>

@@ -28,6 +28,32 @@ const getLlmResponse = async (input) => {
   // console.log(request.data)
   return request.data
 }
+const getLlmResponseSpecific = async (input,specific)=>{
+  const request = await axios.post(
+      baseUrl,
+      {
+          "model": "llama3-8b-8192",
+          "messages": [
+            {
+                "role": "system",
+                "content": `You are a medical data analyst. You look at the ${specific} vitals of the patient and give your advice on it's basis.The data can be of multiple days in a dictionary of arrays.Only give your response in 50-60 words maximum. `
+            },
+            {
+                "role": "user",
+                "content": input
+            }
+          ]
+      },
+      {
+          headers: {
+              'Authorization': `Bearer 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`,
+              'Content-Type': 'application/json',
+          },
+      }
+  )
+  // console.log(request.data)
+  return request.data
+}
 const getLlmResponse2 = async (input) => {
   const request = await axios.post(
       baseUrl,
@@ -80,4 +106,4 @@ const getLlmResponse3 = async (input) => {
   // console.log(request.data)
   return request.data
 }
-export default { getLlmResponse ,getLlmResponse2, getLlmResponse3}
+export default { getLlmResponse ,getLlmResponse2, getLlmResponse3, getLlmResponseSpecific}

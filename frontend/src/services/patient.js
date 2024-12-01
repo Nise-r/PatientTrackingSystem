@@ -61,8 +61,12 @@ const getPatients = async (user)=>{
   const config = {
     headers: {Authorization:token}, 
   }
-  const request = await axios.get('http://localhost:3001/api/user',config)
-  return request.data.find(u => user.username === "blaa").patients
+  const request = await axios.get('http://localhost:3001/api/user')
+  // console.log(request.data)
+  // console.log(user.username)
+  const find = request.data.find(u => u.name==user.name).patients
+  // console.log(find)
+  return find
 }
 
 const edit = async (credentials)=>{

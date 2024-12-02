@@ -150,6 +150,26 @@ body{
 .sidebarR.open div:nth-of-type(1){
   
 }
+
+.sidebarRD {
+  position: fixed;
+  top: 0;
+  right: -650px; /* Hidden by default */
+  width: 550px;
+  height: 100%;
+  background-color: lightblue;
+  transition: right 0.3s ease;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.sidebarRD.open {
+  right: 0; /* Sidebar is open */
+  overflow-y: auto;
+}
+
+
+
 .givePrescription{
   margin-bottom: 100px;
   position: relative;

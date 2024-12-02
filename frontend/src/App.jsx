@@ -12,6 +12,7 @@ import {
 import patientService from './services/patient'
 import loginService from './services/login'
 import llmService from './services/llm'
+import imageService from './services/image'
 import Notification from './components/Notification'
 import axios from 'axios'
 
@@ -363,6 +364,7 @@ const createChartData = (label,indexes, data) => ({
         borderColor: "rgba(75,192,192,1)",
         backgroundColor: "rgba(75,192,192,0.2)",
         fill: true,
+        tension: 0.4
       },
     ],
 })
@@ -445,7 +447,7 @@ const Profile=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
             {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
             {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
             {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-            {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+            {user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}
             <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
             {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
           </ul>
@@ -510,7 +512,7 @@ const Settings=({isSideOpenL,toggleSidebarL,user,message,setMessage})=>{
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          {user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
@@ -580,7 +582,7 @@ const Patients= ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
             {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
             {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
             {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-            {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+            {/*{user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}*/}
             <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
             {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
           </ul>
@@ -774,7 +776,7 @@ const LoginPage = ({setUser,message,setMessage})=>{
   )
 }
 
-const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC,message,setMessage})=>{
+const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC,toggleSidebarRD,message,setMessage,setIsSideOpenRD,isSideOpenRD})=>{
   const [patient,setPatient] = useState([])
   const [comment,setComment] = useState('')
   const [timeRange, setTimeRange] = useState('thisWeek')
@@ -786,6 +788,10 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
   const [LLMOL,setLLMOL] = useState('')
   const [LLMT,setLLMT] = useState('')
   const [LLMP,setLLMP] = useState('')
+  const [LLMIMG,setLLMIMG] = useState('')
+  const [images,setImages] = useState([])
+
+  const [expandedIndex, setExpandedIndex] = useState(null)
   // const [prevPres,setPrevPres] = useState(null)
   const navigate = useNavigate()
 
@@ -796,6 +802,19 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     if(user==null) navigate('/login')
   },[])
 
+  const getImg = async (id) =>{
+    const img  = await imageService.getImages(id)
+    setImages(img)
+  }
+
+  useEffect(() => {
+    // axios.get(`http://localhost:3001/api/user/rec/${id}`)
+    //   .then(response => setImages(response.data))
+    //   .catch(error => console.error('Error fetching images:', error))
+    getImg(id)
+    // console.log(images)
+  }, [user])
+  
   const getP = async () => {
       const p = await patientService.getPatientsData(id)
       // const resp  = await llmService.getLlmResponse('what is the capital of india')
@@ -821,10 +840,16 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
       setComment('')
       // dataF = await addPres
 
+
       setMessage('Added Today\'s prescription')
       setTimeout(()=>{
         setMessage(null)
       },5000)
+      setTimeout(()=>{
+        window.location.reload()
+      },[1000])
+
+
 
     } catch (exception) {
       console.error('comment failed: ', exception)
@@ -909,8 +934,9 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     specificLlmResponse(specificData('temperature'),'temperature')
     specificLlmResponse(specificData('oxygenLevel'),'oxygenLevel')
     specificLlmResponse(specificData('bloodPressure'),'bloodPressure')
+
     // console.log(specificData('glucoseLevel'))
-    // console.log(specificData('bloodPressure'))
+    // console.log(specificData('oxygenLevel'))
     // console.log(specificData('bloodPressure'))
   },[filteredData])
 
@@ -944,6 +970,33 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
     setTimeRange(selectedRange)
     setFilteredData(filterData(selectedRange))
     // llmResponse(filteredData)
+  }
+
+  const llmResponseImg = async (ind)=>{
+    let file = null
+    images.map((img,index)=>index===ind?file = img.url:null)
+    console.log(file)
+    const formData = new FormData()
+    formData.append('image', file)
+    try {
+      const result = await axios.post('http://localhost:3001/api/user/analyze-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      // console.log(result.data.choices[0].message.content)
+      setLLMIMG(result.data.choices[0].message.content.split("\n"))
+      // console.log(LLMIMG)
+    } catch (error) {
+        console.error('Error:', error);
+    }
+    // setLLMIMG('Fuck off')
+  }
+
+  const handleExpand = (index) => {
+    setExpandedIndex(expandedIndex === index ? null : index); // Toggle expansion
+    if(expandedIndex!==index){
+      // console.log('this one ',index)
+      llmResponseImg(index)
+    }
   }
 
   
@@ -1011,6 +1064,52 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
         </ul>
       </div>
 
+      <div className={`sidebarRD ${isSideOpenRD ? 'open' : ''}`} >
+        <button onClick={toggleSidebarRD} className="close-btn">✖</button>
+        <p className="sidebarComm">Patient Documents</p>
+         <div style={{ display: 'flex', flexWrap: 'wrap'}}>
+        <ul className="sidebar-tabs" style={{width:'100%'}}>
+          {images.map((img, index) => (
+            <li key={img.id} className="comments" style={{ marginBottom: '10px' ,width:'100%'}}>
+              {/* Clickable header */}
+              <div 
+                onClick={() => handleExpand(index)} 
+                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#f5f5f5', borderRadius: '5px' }}
+              >
+                <p style={{ margin: '0', flex: '0 0 auto' }}>{img.date}</p>
+                <p style={{ margin: '0', textAlign: 'center', flex: '1 1 auto' }}>{img.name}</p>
+              </div>
+              
+              {/* Expandable section */}
+              {expandedIndex === index && (
+                <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                  <img 
+                    src={img.url} 
+                    alt="Uploaded" 
+                    style={{ width: '450px', height: '450px', objectFit: 'contain', borderRadius: '5px' }} 
+                  />
+                  {/*<p style={{ marginTop: '10px' }}>AI Comment</p>*/}
+                  {LLMIMG==''?<p style={{ marginTop: '10px' }}>AI Comment</p>:
+                  // <p style={{ marginTop: '10px' }}>{LLMIMG}</p>
+                  <ul style={{listStyleType:'none'}}>
+                  {LLMIMG.map((rec,index)=><li style={{backgroundColor:'white'}} key={index}>{rec}</li>)}
+                  </ul>
+                }
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        </div>
+      </div>
+      {/*<ul className="sidebar-tabs2" style={{background:'rgba(0,180,255,0.2)',padding:'10px',borderRadius:'10px',border:'2px solid black'}}>
+            <h2 style={{display:'flex',justifyContent:'center'}}>Ai advice</h2>
+            {advice!=''?advice.map((rec, index) => (
+              <li key={index} className="comments">
+                {rec}
+              </li>
+            )):null}
+      </ul>*/}
       <div className='aicomment'>
         {/*<p>Ai Comments</p>*/}
         {LLM==''?<p>Ai Comments</p>:<p>{LLM}</p>}
@@ -1019,6 +1118,7 @@ const Dashboard =({data,user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSide
       <div className='patientRow'>
         <button className='btn' onClick={()=>{toggleSidebarRP()}}>Previous Prescriptions</button>
         <button className='btn' onClick={()=>{toggleSidebarRC()}}>Patients Comments</button> 
+        <button className='btn' onClick={()=>{toggleSidebarRD()}}>Patients Documents</button> 
       </div>
 
       <div className="selectDate">
@@ -1215,7 +1315,7 @@ const Advice = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          {user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
         </ul>
@@ -1332,7 +1432,7 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          {user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload();}}>Logout</Link></li>
           
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
@@ -1354,17 +1454,17 @@ const AddInfo = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>
       <div className="profile">
         <h2>Add Today's Data</h2>
         <form onSubmit={submitHandler}>
-          <p>Height: <input onChange={(e)=>handler(e,setHeight)} value={height} type="number" /> </p>
-          <p>Weight: <input onChange={(e)=>handler(e,setWeight)} value={weight} type='number'/></p>
-          <p>Bmi: <input onChange={(e)=>handler(e,setBmi)} value={bmi} type="number" /> </p>
-          <p>Heart Rate: <input onChange={(e)=>handler(e,setHeartRate)} value={heartRate} type='number'/></p>
-          <p>Blood Pressure: <p style={{backgroundColor:'ghostwhite'}}>Systolic: <input onChange={(e)=>handler(e,setSystolic)}value={systolic} type="number" /> 
-           </p><p style={{backgroundColor:'ghostwhite'}}>Diastolic:  <input onChange={(e)=>handler(e,setDiastolic)} value={diastolic} type='number'/></p></p>
-          <p >Oxygen Level: <input onChange={(e)=>handler(e,setOxygen)} value={oxygen} type="number" /> </p>
+          <p>Height: <input onChange={(e)=>handler(e,setHeight)} value={height!=0?height:null} type="number" /> </p>
+          <p>Weight: <input onChange={(e)=>handler(e,setWeight)} value={weight!=0?weight:null} type='number'/></p>
+          <p>Bmi: <input onChange={(e)=>handler(e,setBmi)} value={bmi!=0?bmi:null} type="number" /> </p>
+          <p>Heart Rate: <input onChange={(e)=>handler(e,setHeartRate)} value={heartRate!=0?heartRate:null} type='number'/></p>
+          <p>Blood Pressure: <p style={{backgroundColor:'ghostwhite'}}>Systolic: <input onChange={(e)=>handler(e,setSystolic)}value={systolic!=0?systolic:null} type="number" /> 
+           </p><p style={{backgroundColor:'ghostwhite'}}>Diastolic:  <input onChange={(e)=>handler(e,setDiastolic)} value={diastolic!=0?diastolic:null} type='number'/></p></p>
+          <p >Oxygen Level: <input onChange={(e)=>handler(e,setOxygen)} value={oxygen!=0?oxygen:null} type="number" /> </p>
           <p>Patient Comment: <textarea onChange={(e)=>handler(e,setComment)} value={comment} type='string'/></p>
-          <p>Glucose Level: <input onChange={(e)=>handler(e,setGlucose)} value={glucose} type="number" /> </p>
-          <p>Temperature: <input onChange={(e)=>handler(e,setTemperature)} value={temperature} type='number'/></p>
-          <p>Pain:(1-5) <input onChange={(e)=>handler(e,setPain)} value={pain} type="number" /> </p>
+          <p>Glucose Level: <input onChange={(e)=>handler(e,setGlucose)} value={glucose!=0?glucose:null} type="number" /> </p>
+          <p>Temperature: <input onChange={(e)=>handler(e,setTemperature)} value={temperature!=0?temperature:null} type='number'/></p>
+          <p>Pain:(1-5) <input onChange={(e)=>handler(e,setPain)} value={pain!=0?pain:null} type="number" /> </p>
           
           <button type="submit">Add</button>
         </form>
@@ -1467,13 +1567,28 @@ const AddPatients = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage
     </div>
   )
 }
-const Nearby = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
+const Document = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
+  const [photo, setPhoto] = useState('')
+  const [images, setImages] = useState([])
+  const [name, setName] = useState('')
 
+
+  const getImg = async (name)=>{
+    const img = await imageService.getImages(name)
+    setImages(img)
+  }
+
+  useEffect(() => {
+    // axios.get(`http://localhost:3001/api/user/rec/${user.name}`)
+    //   .then(response => setImages(response.data))
+    //   .catch(error => console.error('Error fetching images:', error))
+    getImg(user.name)
+  }, [])
 
   useEffect(() => {
     if (user) {
       // Save the current path in localStorage
-      localStorage.setItem("lastVisitedPage", "/nearby");
+      localStorage.setItem("lastVisitedPage", "/document");
     }
   }, [user]);
 
@@ -1481,6 +1596,34 @@ const Nearby = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
     if(isSideOpenL)
     toggleSidebarL()
   },[])
+
+  const handlePhoto = (event)=>{
+    setPhoto(event.target.files[0])
+    // console.log(event.target.files[0])
+  }
+  const nameHandler = (event)=>{
+    setName(event.target.value)
+  }
+  const handleSubmit =async (event)=>{
+    event.preventDefault()
+
+    try {
+      const formData = new FormData()
+      formData.append('name',name)
+      formData.append('username',user.username)
+      formData.append('photo',photo)
+
+      const pst = await imageService.postImage(formData)
+
+      setMessage(`Added document`)
+      setTimeout(()=>{
+        setMessage(null)
+      },5000)
+    } catch (exception) {
+      console.error('Error when adding patients data: ', exception)
+      alert('something wrong. find out')
+    }
+  }
 
   return (
     <>
@@ -1498,7 +1641,7 @@ const Nearby = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
           {user.type=='doctor'?<li><Link to="/add">Add Patient</Link></li>:null}
           {user.type=='patient'?<li><Link to="/addInfo">Add today data</Link></li>:null}
           {user.type=='patient'?<li><Link to="/advice">Get Advice</Link></li>:null}
-          {/*{user.type=='patient'?<li><Link to="/nearby">Nearby</Link></li>:null}*/}
+          {user.type=='patient'?<li><Link to="/document">Document</Link></li>:null}
           <li><Link to="/profile"  onClick={()=>{window.localStorage.removeItem('loggedUser');window.location.reload()}}>Logout</Link></li>
           
           {/*<li><Link to="/dashboard">Dashboard</Link></li>*/}
@@ -1515,6 +1658,33 @@ const Nearby = ({isSideOpenL,toggleSidebarL,user,setUser,message,setMessage})=>{
         <p  className='patient'>{user.name}</p>
 
       </div>
+
+    </div>
+    <Notification message={message} className="notification"/>
+    <div className="container">
+      <div className="profile">
+        <form onSubmit={handleSubmit} encType='multipart/form-data'>
+         <h2>Upload a Document</h2>
+         <p><input type="file" accept=".png, .jpg, .jpeg" name="photo" onChange={handlePhoto}/></p>
+         <p>Name: <input onChange={(e)=>nameHandler(e)} type="string" /> </p>
+         <button type="submit">Submit</button>
+        </form>
+        <h2>Uploaded Documents</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap'}}>
+          {images.map(img => (
+            <div key={img.id} style={{ margin: '10px' }}>
+              <p style={{padding:'0px',margin:'2px', backgroundColor:'ghostwhite'}}>{img.date}</p>
+              <p style={{padding:'0px',margin:'2px'}}>{img.name}</p>
+              <img 
+                src={img.url} 
+                alt="Uploaded" 
+                style={{ width: '250px', height: '250px', objectFit: 'cover' }} 
+              />
+
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
     </>
   )
@@ -1526,6 +1696,7 @@ function App() {
   const [isSideOpenL, setIsSideOpenL] = useState(false)
   const [isSideOpenRP, setIsSideOpenRP] = useState(false)
   const [isSideOpenRC, setIsSideOpenRC] = useState(false)
+  const [isSideOpenRD, setIsSideOpenRD] = useState(false)
   const [user, setUser] = useState(null)
   const [message, setMessage] = useState(null)
 
@@ -1552,11 +1723,18 @@ function App() {
   }
   const toggleSidebarRP = ()=>{
     if(isSideOpenRC) setIsSideOpenRC(!isSideOpenRC)
+    if(isSideOpenRD) setIsSideOpenRD(!isSideOpenRD)
     setIsSideOpenRP(!isSideOpenRP)
   }
   const toggleSidebarRC = ()=>{
     if(isSideOpenRP) setIsSideOpenRP(!isSideOpenRP)
+    if(isSideOpenRD) setIsSideOpenRD(!isSideOpenRD)
     setIsSideOpenRC(!isSideOpenRC)
+  }
+  const toggleSidebarRD = ()=>{
+    if(isSideOpenRP) setIsSideOpenRP(!isSideOpenRP)
+    if(isSideOpenRC) setIsSideOpenRP(!isSideOpenRC)
+    setIsSideOpenRD(!isSideOpenRD)
   }
 
   const lastVisitedPage = localStorage.getItem("lastVisitedPage")
@@ -1583,8 +1761,8 @@ function App() {
             <Route path="/add" element={user?<AddPatients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/>:<Navigate to="/login"/>} />
             
             <Route path="/dashboard/:id" element={<Dashboard data={patientsData} user={user} toggleSidebarRC={toggleSidebarRC} toggleSidebarRP={toggleSidebarRP}
-                toggleSidebarL={toggleSidebarL} isSideOpenL={isSideOpenL} setIsSideOpenL={setIsSideOpenL} 
-                isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRC={isSideOpenRC}
+                toggleSidebarL={toggleSidebarL} isSideOpenL={isSideOpenL} setIsSideOpenL={setIsSideOpenL} toggleSidebarRD={toggleSidebarRD}
+                isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRC={isSideOpenRC} isSideOpenRD={isSideOpenRD} setIsSideOpenRD={setIsSideOpenRD}
                 setIsSideOpenRC={setIsSideOpenRC} message={message} setMessage={setMessage}/>}/>
 
             <Route path="/advice" element={user?<Advice user={user} setUser ={setUser} isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}  message={message} setMessage={setMessage}/>:<Navigate to="/login"/>}/>
@@ -1593,7 +1771,7 @@ function App() {
 
             <Route path="/create" element={user?<Navigate to={lastVisitedPage||"/profile"}/>:<CreateAccount user ={user}  setUser ={setUser} message={message} setMessage={setMessage}/>} />
 
-            {/*<Route path="/nearby" element={user?<Nearby user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage} />:<Navigate to="/login"/>} />*/}
+            <Route path="/document" element={user?<Document user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage} />:<Navigate to="/login"/>} />
 
             <Route path="*" element={user?<Navigate to="/profile" />:<Navigate to={lastVisitedPage||"/login"}/>} />
         </Routes>

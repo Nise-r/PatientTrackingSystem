@@ -1,6 +1,7 @@
 import axios from 'axios'
 const baseUrl = 'https://api.groq.com/openai/v1/chat/completions'
-
+const apiKey = 'Bearer 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 asd'
+const apiKeyTest = 'Bearer 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'
 
 const getLlmResponse = async (input) => {
   const request = await axios.post(
@@ -20,7 +21,7 @@ const getLlmResponse = async (input) => {
       },
       {
           headers: {
-              'Authorization': `Bearer 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`,
+              'Authorization': apiKey,
               'Content-Type': 'application/json',
           },
       }
@@ -28,6 +29,33 @@ const getLlmResponse = async (input) => {
   // console.log(request.data)
   return request.data
 }
+const getLlmResponseChatbot = async (input,data) => {
+  const request = await axios.post(
+      baseUrl,
+      {
+          "model": "llama3-8b-8192",
+          "messages": [
+            {
+                "role": "system",
+                "content": `You are a medical data chatbot.  You look at the vitals of the patient and give your advice on it's basis.The data can be of multiple days in a dictionary of arrays.you have to answer general questions to doctor queries related to given data. The previous queries are also given, you  have to answer the last query by user only. `
+            },
+            {
+                "role": "user",
+                "content": `DATA: ${data}\n QUERIES: ${input} `
+            }
+          ]
+      },
+      {
+          headers: {
+              'Authorization': apiKey,
+              'Content-Type': 'application/json',
+          },
+      }
+  )
+  // console.log(request.data)
+  return request.data
+}
+
 const getLlmResponseSpecific = async (input,specific)=>{
   const request = await axios.post(
       baseUrl,
@@ -46,7 +74,7 @@ const getLlmResponseSpecific = async (input,specific)=>{
       },
       {
           headers: {
-              'Authorization': `Bearer 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`,
+              'Authorization': apiKey,
               'Content-Type': 'application/json',
           },
       }
@@ -72,7 +100,7 @@ const getLlmResponse2 = async (input) => {
       },
       {
           headers: {
-              'Authorization': `Bearer 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`,
+              'Authorization': apiKey,
               'Content-Type': 'application/json',
           },
       }
@@ -98,7 +126,7 @@ const getLlmResponseAdvice = async (input,patientComments,previousPrescriptions,
       },
       {
           headers: {
-              'Authorization': `Bearer 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`,
+              'Authorization': apiKey,
               'Content-Type': 'application/json',
           },
       }
@@ -125,7 +153,7 @@ const getLlmResponseClean = async (input) => {
       },
       {
           headers: {
-              'Authorization': `Bearer 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`,
+              'Authorization': apiKey,
               'Content-Type': 'application/json',
           },
       }
@@ -133,4 +161,4 @@ const getLlmResponseClean = async (input) => {
   // console.log(request.data)
   return request.data
 }
-export default { getLlmResponse ,getLlmResponse2, getLlmResponseClean, getLlmResponseSpecific, getLlmResponseAdvice}
+export default { getLlmResponse, getLlmResponseChatbot ,getLlmResponse2, getLlmResponseClean, getLlmResponseSpecific, getLlmResponseAdvice}

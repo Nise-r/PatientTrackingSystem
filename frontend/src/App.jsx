@@ -442,7 +442,7 @@ const LoginPage = ({setUser,message,setMessage})=>{
   )
 }
 
-const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC,toggleSidebarRD,message,setMessage,setIsSideOpenRD,isSideOpenRD})=>{
+const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenRCh,isSideOpenRP,isSideOpenL,setIsSideOpenL,toggleSidebarL,toggleSidebarRP,toggleSidebarRC,toggleSidebarRCh,toggleSidebarRD,message,setMessage,setIsSideOpenRD,isSideOpenRD})=>{
   const [patient,setPatient] = useState([])
   const [comment,setComment] = useState('')
   const [timeRange, setTimeRange] = useState('thisWeek')
@@ -456,6 +456,8 @@ const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenR
   const [LLMP,setLLMP] = useState('')
   const [LLMIMG,setLLMIMG] = useState('')
   const [images,setImages] = useState([])
+  const [chatbot, setChatbot] = useState(["Hello, how may i help you?"])
+  const [chatbotInput,setChatbotInput] = useState([])
 
   const [expandedIndex, setExpandedIndex] = useState(null)
   // const [prevPres,setPrevPres] = useState(null)
@@ -492,19 +494,50 @@ const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenR
     // console.log(event.target.value)
     setComment(event.target.value)
   }
+  const handler2 = (event)=>{
+    // console.log(event.target.value)
+    setChatbotInput(event.target.value)
+  }
+
+  const chatHandler = async (event)=>{
+    event.preventDefault()
+    
+    try{
+      // setChatbot(chatbot+chatbotInput)
+      setChatbot((prev)=>[...prev,chatbotInput])
+
+      // console.log(chatbot[chatbot.length-1])
+
+      const jsonInput = JSON.stringify(chatbot)
+      const escapedJson = JSON.stringify(jsonInput)
+
+      const jsonInput2 = JSON.stringify(filteredData)
+      const escapedJson2 = JSON.stringify(jsonInput2)
+
+
+
+      console.log(escapedJson2)
+
+      const resp = await llmService.getLlmResponseChatbot(escapedJson,escapedJson2)
+
+      // console.log(resp)
+
+      setChatbot((prev)=>[...prev,resp.choices[0].message.content])
+
+
+
+    }catch (exception) {
+      console.log('comment failed: ', exception)
+      // alert('Invalid credentials, please try again.')
+    }
+  }
   const submitHandler = async (event)=>{
     event.preventDefault()
     try {
       const name = patient[0].name
       const addPres = await patientService.addPrescription({ name, comment })
 
-      // console.log(addPres)
-      // const toAdd = Array.from(Object.entries(addPres.data).map(([key,value])=>value.previousPrescriptions))
-      // console.log(toAdd)
-
-      // setPrevPres(toAdd)
       setComment('')
-      // dataF = await addPres
 
 
       setMessage('Added Today\'s prescription')
@@ -724,10 +757,36 @@ const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenR
 
       <div className={`sidebarR ${isSideOpenRC ? 'open' : ''}`}>
         <button onClick={toggleSidebarRC} className="close-btn">✖</button>
-        <p className="sidebarComm">Patient Comments</p>
+        <p className="sidebarComm">Patients Comments</p>
         <ul className="sidebar-tabs">
           {Object.entries(dataF.data).map(([key,value],index)=><li key={index} className='comments'><div><p>{key}</p><p>{value.patientComments}</p></div></li>)}
         </ul>
+      </div>
+
+    {/* chatbot*/}
+      <div className={`sidebarRD ${isSideOpenRCh ? 'open' : ''}`}>
+        <p className="sidebarComm">Chatbot</p>
+        <button onClick={toggleSidebarRCh} className="close-btn">✖</button>
+        
+        <div className="chatbotArea">
+          <ul className="tabsChatbot">
+            {/*<p className="chatIcon">Bot</p>*/}
+            {/*<p className="chatIcon2">User</p>*/}
+            {/*{console.log(chatbot[0])}*/}
+            {chatbot.map((value,index)=><div>
+              {index%2==0?<p className="chatIcon">Bot</p>:<p className="chatIcon2">User</p>}
+              <li key={index} ><p>{value}</p></li>
+            </div>)}
+            {/*{Object.entries(dataF.data).map(([key,value],index)=><div>
+              {index%2==0?<p className="chatIcon">Bot</p>:<p className="chatIcon2">User</p>}
+              <li key={index} ><p>patientCommentspatientCommentspatientCommentspatientCommentspatientCommentspatientCommentspatientComments</p></li>
+            </div>)}*/}
+          </ul>
+        </div>
+        <form className="Chatbot" onSubmit={chatHandler}>
+          <textarea className="inputChatbot" type='text' onChange={(e)=>handler2(e)}></textarea>
+          <button className="arrowChatbot">{`>`}</button>
+        </form>
       </div>
 
       <div className={`sidebarRD ${isSideOpenRD ? 'open' : ''}`} >
@@ -785,6 +844,7 @@ const Dashboard =({user,setIsSideOpenRC,setIsSideOpenRP,isSideOpenRC,isSideOpenR
         <button className='btn' onClick={()=>{toggleSidebarRP()}}>Previous Prescriptions</button>
         <button className='btn' onClick={()=>{toggleSidebarRC()}}>Patients Comments</button> 
         <button className='btn' onClick={()=>{toggleSidebarRD()}}>Patients Documents</button> 
+        <button className='btn' onClick={()=>{toggleSidebarRCh()}}>Chatbot</button> 
       </div>
 
       <div className="selectDate">
@@ -1365,6 +1425,7 @@ function App() {
   const [isSideOpenL, setIsSideOpenL] = useState(false)
   const [isSideOpenRP, setIsSideOpenRP] = useState(false)
   const [isSideOpenRC, setIsSideOpenRC] = useState(false)
+  const [isSideOpenRCh, setIsSideOpenRCh] = useState(false)
   const [isSideOpenRD, setIsSideOpenRD] = useState(false)
   const [user, setUser] = useState(null)
   const [message, setMessage] = useState(null)
@@ -1393,17 +1454,26 @@ function App() {
   const toggleSidebarRP = ()=>{
     if(isSideOpenRC) setIsSideOpenRC(!isSideOpenRC)
     if(isSideOpenRD) setIsSideOpenRD(!isSideOpenRD)
+    if(isSideOpenRCh) setIsSideOpenRCh(!isSideOpenRCh)
     setIsSideOpenRP(!isSideOpenRP)
   }
   const toggleSidebarRC = ()=>{
     if(isSideOpenRP) setIsSideOpenRP(!isSideOpenRP)
     if(isSideOpenRD) setIsSideOpenRD(!isSideOpenRD)
+    if(isSideOpenRCh) setIsSideOpenRCh(!isSideOpenRCh)
     setIsSideOpenRC(!isSideOpenRC)
   }
   const toggleSidebarRD = ()=>{
     if(isSideOpenRP) setIsSideOpenRP(!isSideOpenRP)
     if(isSideOpenRC) setIsSideOpenRP(!isSideOpenRC)
+    if(isSideOpenRCh) setIsSideOpenRCh(!isSideOpenRCh)
     setIsSideOpenRD(!isSideOpenRD)
+  }
+  const toggleSidebarRCh = ()=>{
+    if(isSideOpenRP) setIsSideOpenRP(!isSideOpenRP)
+    if(isSideOpenRC) setIsSideOpenRP(!isSideOpenRC)
+    if(isSideOpenRD) setIsSideOpenRD(!isSideOpenRD)
+    setIsSideOpenRCh(!isSideOpenRCh)
   }
 
   const lastVisitedPage = localStorage.getItem("lastVisitedPage")
@@ -1429,9 +1499,9 @@ function App() {
 
             <Route path="/add" element={user?<AddPatients user ={user}  isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL} message={message} setMessage={setMessage}/>:<Navigate to="/login"/>} />
             
-            <Route path="/dashboard/:id" element={<Dashboard  user={user} toggleSidebarRC={toggleSidebarRC} toggleSidebarRP={toggleSidebarRP}
+            <Route path="/dashboard/:id" element={<Dashboard  user={user} toggleSidebarRC={toggleSidebarRC} toggleSidebarRP={toggleSidebarRP} toggleSidebarRCh={toggleSidebarRCh}
                 toggleSidebarL={toggleSidebarL} isSideOpenL={isSideOpenL} setIsSideOpenL={setIsSideOpenL} toggleSidebarRD={toggleSidebarRD}
-                isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRC={isSideOpenRC} isSideOpenRD={isSideOpenRD} setIsSideOpenRD={setIsSideOpenRD}
+                isSideOpenRP={isSideOpenRP} setIsSideOpenRP={setIsSideOpenRP} isSideOpenRCh={isSideOpenRCh} setIsSideOpenRCh={setIsSideOpenRCh} isSideOpenRC={isSideOpenRC} isSideOpenRD={isSideOpenRD} setIsSideOpenRD={setIsSideOpenRD}
                 setIsSideOpenRC={setIsSideOpenRC} message={message} setMessage={setMessage}/>}/>
 
             <Route path="/advice" element={user?<Advice user={user} setUser ={setUser} isSideOpenL={isSideOpenL} toggleSidebarL={toggleSidebarL}  message={message} setMessage={setMessage}/>:<Navigate to="/login"/>}/>

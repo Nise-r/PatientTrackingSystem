@@ -4,7 +4,7 @@ body, html {
   height: 100%;
 }
 body{
-  background-image: url('./assets/bg-medical.jpeg');
+  background-image: url('./assets/bg-medical.jpg');
 }
 .navbar{
   right: 10em;

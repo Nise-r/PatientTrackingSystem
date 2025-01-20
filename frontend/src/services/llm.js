@@ -1,7 +1,9 @@
 import axios from 'axios'
 const baseUrl = 'https://api.groq.com/openai/v1/chat/completions'
-const apiKey = 'Bearer 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 asd'
-const apiKeyTest = 'Bearer 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'
+
+const apiKey = 'Bearer YOUR_API'
+
+
 
 const getLlmResponse = async (input) => {
   const request = await axios.post(

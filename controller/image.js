@@ -125,7 +125,7 @@ imageRouter.post('/analyze-image', upload.single('image'), async (req, res) => {
             },
             {
                 headers: {
-                    Authorization: `Bearer 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`,
+                    Authorization: `Bearer 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`,
                     'Content-Type': 'application/json',
                 }
             }

@@ -11,9 +11,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "apexcharts": "^4.3.0",
     "axios": "^1.7.8",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "fs": "^0.0.1-security",
@@ -21,6 +23,8 @@
     "mongoose": "^8.8.2",
     "multer": "^1.4.5-lts.1",
     "opencage-api-client": "^1.0.7",
+    "react-apexcharts": "^1.7.0",
+    "recharts": "^2.15.0",
     "uuid": "^11.0.3"
   },
   "devDependencies": {

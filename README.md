@@ -1,6 +1,21 @@
-DocAssist
+__DocAssist__
 
 DocAssist is a patient tracking system designed to streamline healthcare management by providing an efficient way to track, manage, and organize patient data. This project emphasizes ease of use, scalability, and integration with modern technologies, making it a reliable solution for healthcare providers.
+
+
+![image](https://github.com/user-attachments/assets/fc08b990-6f37-42e2-9f80-44a91ab2b2bb)
+
+![image](https://github.com/user-attachments/assets/b2b6d081-a508-4b47-8737-077d1cf5fc0c)
+
+![image](https://github.com/user-attachments/assets/b4f94a24-5ef0-42db-8e01-d58651b5be81)
+
+![image](https://github.com/user-attachments/assets/ce9af93a-7c70-404d-9994-a381e84024bc)
+
+
+![image](https://github.com/user-attachments/assets/fe01a864-d568-447d-8b59-dcc4aee73651)
+
+
+![image](https://github.com/user-attachments/assets/d1aa148f-2a9c-4db7-8a3f-b112806835b2)
 
 Table of Contents
 
